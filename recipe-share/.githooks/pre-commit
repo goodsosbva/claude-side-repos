@@ -1,0 +1,27 @@
+#!/bin/sh
+# 포맷팅 체크와 린트. 건너뛰려면 git commit --no-verify
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+# 1) 포맷 — Prettier
+# ponytail: 스테이징 파일만 넘기려면 파일명 이스케이프 처리가 필요해 전체 검사로 둠.
+#           Prettier는 빠르므로, 체감될 만큼 느려지면 그때 lint-staged로 교체.
+if ! pnpm format:check; then
+  echo ""
+  echo "✗ 포맷이 맞지 않습니다."
+  echo "  pnpm format 으로 고친 뒤 git add 하고 다시 커밋하십시오."
+  exit 1
+fi
+
+# 2) 공백 — Prettier가 다루지 않는 파일(Dockerfile, .prisma, .env.example 등) 보완
+if ! git diff --cached --check; then
+  echo ""
+  echo "✗ 공백 오류입니다. 위에 표시된 위치를 고치십시오."
+  exit 1
+fi
+
+# 3) 린트 — 스테이징된 코드 파일이 있을 때만
+echo "$staged" | grep -Eq '\.(ts|tsx|js|jsx|mjs)$' || exit 0
+pnpm lint

@@ -1,0 +1,3 @@
+# Prisma CLI가 읽는 파일입니다 (.env.local은 읽지 않습니다).
+# 경로는 prisma/schema.prisma 기준 상대경로이므로 실제 파일은 prisma/dev.db 에 생성됩니다.
+DATABASE_URL="file:./dev.db"

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "shop-db": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://shop:shop@localhost:5432/shop"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,26 @@
+# SQLite 파일과 업로드 이미지는 파드가 죽어도 남아야 한다 (risk-analysis.md #1·#2).
+# storageClassName 을 비워 두면 클러스터 기본 StorageClass 를 쓴다.
+# Docker Desktop 은 hostpath, kind 는 standard, minikube 는 standard 가 기본이다.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recipe-share-db
+  namespace: recipe-share
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recipe-share-uploads
+  namespace: recipe-share
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

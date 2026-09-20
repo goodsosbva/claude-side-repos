@@ -1,0 +1,4 @@
+#!/bin/sh
+# 테스트 실행. 건너뛰려면 git push --no-verify
+set -e
+pnpm test

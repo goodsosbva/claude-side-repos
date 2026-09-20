@@ -1,0 +1,35 @@
+{
+  "name": "recipe-share",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.12.4",
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
+    "dev": "pnpm --filter @recipe-share/web dev",
+    "build": "pnpm --filter @recipe-share/web build",
+    "start": "pnpm --filter @recipe-share/web start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.9",
+    "eslint": "^9",
+    "eslint-config-next": "^16.3.5",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
+    "prettier": "^3.6.2",
+    "typescript": "^5"
+  }
+}

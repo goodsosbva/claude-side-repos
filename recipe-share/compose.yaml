@@ -1,0 +1,64 @@
+name: recipe-share
+
+services:
+  # 웹이 뜨기 전에 스키마를 밀어 넣는다. 이게 없으면 첫 실행에서 테이블이 없어
+  # 모든 페이지가 500 으로 죽는다. 한 번 돌고 끝나는 서비스다.
+  #
+  # migrations/ 가 생기면 db push 대신 `prisma migrate deploy` 로 바꾸는 편이 낫다.
+  db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: pnpm --filter @recipe-share/db exec prisma db push
+    environment:
+      DATABASE_URL: file:/data/dev.db
+    volumes:
+      - db-data:/data
+    networks:
+      - recipe
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    # --webpack 인 이유는 docs/setup/docker-dev.md "Hot reload" 절 참고.
+    # 요약: 윈도우 바인드 마운트는 inotify 가 전달되지 않아 폴링이 필수인데,
+    #       폴링이 확실히 동작하는 쪽이 webpack 이다. -H 0.0.0.0 은 기본값이라 생략.
+    command: pnpm --filter @recipe-share/web exec next dev --webpack
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      # 파일 변경 감지 (webpack watcher)
+      WATCHPACK_POLLING: 'true'
+      # SQLite 는 바인드 마운트가 아니라 named volume 에 둔다 — 아래 volumes 주석 참고
+      DATABASE_URL: file:/data/dev.db
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
+    volumes:
+      # 소스 — 호스트 편집이 즉시 반영되는 통로
+      - .:/app
+      # 아래 익명 볼륨들이 바인드 마운트보다 우선 적용되어,
+      # 호스트의 (없거나 윈도우용인) node_modules 가 컨테이너 것을 덮어쓰지 않게 막는다.
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/packages/db/node_modules
+      # 빌드 산출물은 컨테이너 안에서만. 호스트로 새면 느리고 충돌한다.
+      - /app/apps/web/.next
+      # 업로드 이미지도 컨테이너 재생성과 무관하게 남아야 한다 (risk-analysis.md #2).
+      - uploads:/app/apps/web/public/uploads
+      # SQLite 파일. 바인드 마운트(9p) 위에 두면 파일 잠금이 깨질 수 있어 분리했다.
+      - db-data:/data
+    networks:
+      - recipe
+
+volumes:
+  db-data:
+  uploads:
+
+networks:
+  recipe:
+    driver: bridge

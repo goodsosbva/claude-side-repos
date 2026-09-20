@@ -1,0 +1,87 @@
+{
+  "Route Handler (인증 가드 포함)": {
+    "scope": "typescript",
+    "prefix": "rh-auth",
+    "description": "로그인 검증이 붙은 Next Route Handler (feature-spec F10 가드)",
+    "body": [
+      "import { NextResponse } from 'next/server';",
+      "import { prisma } from '@/lib/db';",
+      "import { getCurrentUserId } from '@/lib/auth';",
+      "",
+      "export async function ${1|GET,POST,PUT,DELETE|}(req: Request) {",
+      "\tconst userId = await getCurrentUserId();",
+      "\tif (!userId) {",
+      "\t\treturn NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });",
+      "\t}",
+      "",
+      "\t$0",
+      "",
+      "\treturn NextResponse.json({});",
+      "}",
+    ],
+  },
+
+  "소유권 검증 (IDOR 방지)": {
+    "scope": "typescript",
+    "prefix": "owner-check",
+    "description": "risk-analysis #4 — 리소스 작성자와 JWT userId 일치 검증",
+    "body": [
+      "const ${1:recipe} = await prisma.${2:recipe}.findUnique({",
+      "\twhere: { id },",
+      "\tselect: { authorId: true },",
+      "});",
+      "if (!${1:recipe}) {",
+      "\treturn NextResponse.json({ error: '찾을 수 없습니다.' }, { status: 404 });",
+      "}",
+      "if (${1:recipe}.authorId !== userId) {",
+      "\treturn NextResponse.json({ error: '본인이 작성한 것만 ${3:수정}할 수 있습니다.' }, { status: 403 });",
+      "}",
+      "$0",
+    ],
+  },
+
+  "동적 라우트 params (Next 16)": {
+    "scope": "typescript",
+    "prefix": "rh-params",
+    "description": "Next 16의 Promise 형 params를 받는 핸들러 시그니처",
+    "body": [
+      "type Params = { params: Promise<{ ${1:id}: string }> };",
+      "",
+      "export async function ${2|GET,PUT,DELETE|}(req: Request, { params }: Params) {",
+      "\tconst { ${1:id} } = await params;",
+      "\t$0",
+      "}",
+    ],
+  },
+
+  "요청 본문 검증": {
+    "scope": "typescript",
+    "prefix": "body-parse",
+    "description": "JSON 본문을 안전하게 파싱하고 문자열 필드를 검증",
+    "body": [
+      "const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;",
+      "const ${1:title} = typeof body?.${1:title} === 'string' ? body.${1:title}.trim() : '';",
+      "if (!${1:title}) {",
+      "\treturn NextResponse.json({ error: '${2:필수 항목이 비어 있습니다.}' }, { status: 400 });",
+      "}",
+      "$0",
+    ],
+  },
+
+  "테스트 파일 (node:test)": {
+    "scope": "typescript",
+    "prefix": "test-file",
+    "description": "Node 내장 테스트 러너용 테스트 파일 골격",
+    "body": [
+      "import assert from 'node:assert/strict';",
+      "import { describe, it } from 'node:test';",
+      "import { ${1:fn} } from './${2:module}.ts';",
+      "",
+      "describe('${1:fn}', () => {",
+      "\tit('${3:무엇을 해야 하는지}', () => {",
+      "\t\tassert.equal(${1:fn}($4), $0);",
+      "\t});",
+      "});",
+    ],
+  },
+}
