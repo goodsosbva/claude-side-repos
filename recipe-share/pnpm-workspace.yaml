@@ -1,0 +1,14 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# 설치 중 빌드 스크립트 실행을 허용할 패키지 목록.
+# @parcel/watcher 는 jest(jest-haste-map)가, @swc/core 는 @swc/jest 가 끌고 온다.
+# 빠뜨리면 pnpm 이 스크립트를 건너뛴 채 설치를 마친다.
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - better-sqlite3
+  - prisma
+  - unrs-resolver
+  - '@parcel/watcher'
+  - '@swc/core'

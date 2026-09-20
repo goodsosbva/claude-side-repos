@@ -1,0 +1,14 @@
+# 비밀이 아닌 런타임 설정. 비밀값은 secret.yaml 로.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recipe-share-config
+  namespace: recipe-share
+data:
+  NODE_ENV: development
+  # compose.yaml 과 동일하게 SQLite 파일은 소스 트리 밖의 볼륨에 둔다.
+  # (바인드 마운트 위의 SQLite 는 파일 잠금이 깨질 수 있음 — compose.yaml 주석 참고)
+  DATABASE_URL: file:/data/dev.db
+  JWT_EXPIRES_IN: 2h
+  PORT: '3000'
+  HOSTNAME: 0.0.0.0

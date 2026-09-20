@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recipe-share-web
+  namespace: recipe-share
+  labels:
+    app.kubernetes.io/name: recipe-share
+    app.kubernetes.io/component: web
+spec:
+  replicas: 1
+  # Recreate 인 이유 — SQLite 는 단일 라이터이고 PVC 도 ReadWriteOnce 다.
+  # RollingUpdate 로 두면 새 파드가 같은 PVC 를 못 붙어 Pending 에 걸린다.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: recipe-share
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: recipe-share
+        app.kubernetes.io/component: web
+    spec:
+      # 빈 PVC 에 스키마를 밀어 넣고 시작한다.
+      # migrations 디렉터리가 아직 없으므로 migrate deploy 가 아니라 db push 다.
+      # 마이그레이션 파일을 만들고 나면 이 자리를 prisma migrate deploy 로 바꾼다.
+      initContainers:
+        - name: prisma-db-push
+          image: recipe-share:dev
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          command:
+            - pnpm
+            - --filter
+            - '@recipe-share/db'
+            - exec
+            - prisma
+            - db
+            - push
+            - --skip-generate
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: recipe-share-config
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: db-data
+              mountPath: /data
+      containers:
+        - name: web
+          image: recipe-share:dev
+          # 로컬에서 빌드한 이미지를 그대로 쓴다. 레지스트리에서 당겨오지 않는다.
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          # Dockerfile.dev 에는 CMD 가 없다 (compose 가 command 를 주입하는 구조).
+          # 따라서 여기서 반드시 지정해야 한다.
+          command:
+            - pnpm
+            - --filter
+            - '@recipe-share/web'
+            - exec
+            - next
+            - dev
+            - --webpack
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: recipe-share-config
+            - secretRef:
+                name: recipe-share-secret
+          # next dev 는 첫 요청에서 컴파일을 한다. 그 시간을 startupProbe 로 벌어 주고,
+          # 준비가 끝난 뒤에야 liveness 가 개입하게 한다 (최대 5분).
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - name: db-data
+              mountPath: /data
+            - name: uploads
+              mountPath: /app/apps/web/public/uploads
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: recipe-share-db
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: recipe-share-uploads

@@ -1,0 +1,37 @@
+#!/bin/sh
+# Conventional Commits 검증. 건너뛰려면 git commit --no-verify
+
+subject=$(grep -v '^#' "$1" | grep -v '^[[:space:]]*$' | head -1)
+
+# merge / revert / fixup 은 형식을 강제하지 않음
+case "$subject" in
+  "Merge "*|"Revert "*|"fixup!"*|"squash!"*) exit 0 ;;
+esac
+
+types='feat|fix|docs|style|refactor|perf|test|build|ci|chore'
+
+if printf '%s' "$subject" | grep -Eq "^($types)(\([a-z0-9/._-]+\))?!?: .{1,72}$"; then
+  exit 0
+fi
+
+cat >&2 <<MSG
+
+✗ 커밋 메시지가 규칙에 맞지 않습니다.
+
+  받은 값: $subject
+
+  형식:  <type>(<scope>): <subject>
+  type:  $types
+  scope: 선택, 소문자 (예: auth, recipes, db)
+  !:     선택, 호환성 깨짐 표시
+  제목:  1~72자
+
+  예)
+    feat(auth): 로그인 rate limit 추가
+    fix(recipes): PUT에서 소유권 검증 누락 수정
+    chore!: pnpm workspace로 전환
+
+  형식을 무시하려면 --no-verify
+
+MSG
+exit 1

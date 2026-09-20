@@ -1,0 +1,36 @@
+// architecture.md "레이어별 책임 > Data" 기준
+// 확장 포인트: provider를 "postgresql"로 바꾸면 이전 가능 (risk-analysis.md #8 — 타입 차이로 손볼 곳은 남음)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // bcrypt 해시. 평문 저장 금지
+  name      String?
+  createdAt DateTime @default(now())
+
+  recipes Recipe[]
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  title       String
+  ingredients String // 줄바꿈 구분 텍스트. 구조화가 필요해지면 별도 모델로 분리
+  steps       String // 줄바꿈 구분 텍스트
+  imageUrl    String? // storage.saveImage()가 반환한 URL
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([title])
+}

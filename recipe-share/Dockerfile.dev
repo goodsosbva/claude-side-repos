@@ -1,0 +1,28 @@
+# 개발 전용 이미지. 운영 이미지는 루트 Dockerfile 을 쓴다.
+#
+# node:22 인 이유 — pnpm test 가 node --test 로 .ts 를 직접 실행하며,
+# 이 타입 스트리핑에 Node 22.18+ 가 필요하다 (docs/setup/testing.md).
+# 운영 Dockerfile 은 아직 node:20 이므로 배포 착수 시 같이 올릴 것.
+FROM node:22-alpine
+
+# Prisma 엔진이 alpine 에서 요구하는 것
+RUN apk add --no-cache openssl libc6-compat
+
+RUN corepack enable
+WORKDIR /app
+
+# 의존성만 먼저 복사해 레이어 캐시를 살린다.
+COPY pnpm-workspace.yaml package.json ./
+COPY apps/web/package.json apps/web/
+COPY packages/db/package.json packages/db/
+# --frozen-lockfile 를 쓰지 않는다 — monorepo 전환으로 lockfile 이 재생성되는 중이라
+# 고정하면 빌드가 깨진다. 전환이 끝나면 붙여도 된다.
+RUN pnpm install
+
+COPY . .
+
+# Prisma Client 생성. 스키마를 고치면 컨테이너 안에서 다시 돌려야 한다:
+#   docker compose exec web pnpm --filter @recipe-share/db exec prisma generate
+RUN pnpm --filter @recipe-share/db exec prisma generate
+
+EXPOSE 3000

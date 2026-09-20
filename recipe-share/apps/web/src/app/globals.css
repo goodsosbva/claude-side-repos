@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 다크 모드 대응은 MVP 범위 밖이다. components/ui 가 bg-white·neutral-300 고정이라
+   페이지 배경만 어두워지면 대비가 깨진다. 팔레트를 제대로 잡을 때 같이 넣을 것. */
+:root {
+  --background: #fafafa;
+  --foreground: #171717;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

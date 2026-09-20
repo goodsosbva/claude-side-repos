@@ -1,0 +1,54 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" }
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "pnpm build",
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "typecheck",
+      "type": "shell",
+      "command": "pnpm typecheck",
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "lint",
+      "type": "shell",
+      "command": "pnpm lint",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "pnpm test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "test:watch",
+      "type": "shell",
+      "command": "pnpm test:watch",
+      "isBackground": true,
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "prisma migrate",
+      "type": "shell",
+      "command": "pnpm --filter @recipe-share/db migrate",
+      "problemMatcher": []
+    }
+  ]
+}
